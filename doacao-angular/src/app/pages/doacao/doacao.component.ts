@@ -37,7 +37,8 @@ const PECA_VALOR: Record<Cat, string> = {
         </div>
         <div class="form-group">
           <label>Seu Nome (Doador) *</label>
-          <input [(ngModel)]="doador" placeholder="Ex: João Silva" />
+          <input [(ngModel)]="doador" placeholder="Ex: João Silva" (ngModelChange)="validarCampos()" />
+          <span class="field-error" *ngIf="erros.doador">⚠️ {{ erros.doador }}</span>
         </div>
         <div class="form-group">
           <label>Tamanho *</label>
@@ -48,11 +49,13 @@ const PECA_VALOR: Record<Cat, string> = {
         </div>
         <div class="form-group">
           <label>Cor</label>
-          <input [(ngModel)]="cor" placeholder="Ex: Azul, Vermelho..." />
+          <input [(ngModel)]="cor" placeholder="Ex: Azul, Vermelho..." (ngModelChange)="validarCampos()" />
+          <span class="field-error" *ngIf="erros.cor">⚠️ {{ erros.cor }}</span>
         </div>
         <div class="form-group">
           <label>Marca</label>
-          <input [(ngModel)]="marca" placeholder="Ex: Nike, Adidas..." />
+          <input [(ngModel)]="marca" placeholder="Ex: Nike, Adidas..." (ngModelChange)="validarCampos()" />
+          <span class="field-error" *ngIf="erros.marca">⚠️ {{ erros.marca }}</span>
         </div>
         <div class="form-group">
           <label>Sexo</label>
@@ -87,6 +90,21 @@ export class DoacaoComponent {
   doador = ''; tamanho = ''; cor = ''; marca = ''; sexo = ''; qualidade = '';
   tamanhos: string[] = [];
   enviando = false; sucesso = false; erroMsg = '';
+  erros: { doador?: string; cor?: string; marca?: string } = {};
+
+  private somenteNumeros(valor: string): boolean {
+    return !!valor.trim() && /^\d+$/.test(valor.trim());
+  }
+
+  validarCampos(): void {
+    this.erros = {};
+    if (this.somenteNumeros(this.doador))
+      this.erros.doador = 'Doador precisa ser um nome, não um número.';
+    if (this.somenteNumeros(this.cor))
+      this.erros.cor = 'Cor precisa ser um nome, não um número.';
+    if (this.somenteNumeros(this.marca))
+      this.erros.marca = 'Marca precisa ser um nome, não um número.';
+  }
 
   constructor(private api: ApiService) {}
 
@@ -95,9 +113,13 @@ export class DoacaoComponent {
     this.tamanhos = this.categoria ? TAMANHOS[this.categoria] : [];
   }
 
-  podeEnviar(): boolean { return !!this.categoria && !!this.doador.trim() && !!this.tamanho; }
+  podeEnviar(): boolean {
+    return !!this.categoria && !!this.doador.trim() && !!this.tamanho
+      && !this.erros.doador && !this.erros.cor && !this.erros.marca;
+  }
 
   enviar(): void {
+    this.validarCampos();
     if (!this.podeEnviar() || !this.categoria) return;
     this.enviando = true; this.erroMsg = ''; this.sucesso = false;
     const payload: any = { peca: PECA_VALOR[this.categoria], doador: this.doador.trim(), tamanho: this.tamanho };
@@ -116,5 +138,5 @@ export class DoacaoComponent {
     });
   }
 
-  private resetForm(): void { this.categoria = ''; this.doador = ''; this.tamanho = ''; this.cor = ''; this.marca = ''; this.sexo = ''; this.qualidade = ''; this.tamanhos = []; }
+  private resetForm(): void { this.categoria = ''; this.doador = ''; this.tamanho = ''; this.cor = ''; this.marca = ''; this.sexo = ''; this.qualidade = ''; this.tamanhos = []; this.erros = {}; }
 }
